@@ -49,9 +49,15 @@ function s.initial_effect(c)
 	e4:SetRange(LOCATION_MZONE)
 	e4:SetCountLimit(1,id+100)
 	e4:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_END_PHASE)
+	e4:SetCondition(s.cpfreecon)
 	e4:SetCost(s.cpcost)
 	e4:SetOperation(s.cpop)
 	c:RegisterEffect(e4)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_CHAINING)
+	e5:SetCountLimit(1,id+100)
+	e5:SetCondition(s.cpchaincon)
+	c:RegisterEffect(e5)
 end
 function s.gfilter(c)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
@@ -91,6 +97,12 @@ function s.damval(e,re,val,r,rp,rc)
 end
 function s.cpfilter(c)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER) and c:IsReleasable()
+end
+function s.cpfreecon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
+end
+function s.cpchaincon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==1-tp and rp==1-tp
 end
 function s.cpcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()

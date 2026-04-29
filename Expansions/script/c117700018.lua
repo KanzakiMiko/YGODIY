@@ -13,6 +13,35 @@ function s.initial_effect(c)
 	e0:SetTarget(s.extramtg)
 	e0:SetValue(s.extraval)
 	c:RegisterEffect(e0)
+	if not aux.fus_mat_hack_check then
+		aux.fus_mat_hack_check=true
+		function aux.fus_mat_hack_exmat_filter(c)
+			return c:IsHasEffect(EFFECT_EXTRA_FUSION_MATERIAL,c:GetControler())
+		end
+		_GetFusionMaterial=Duel.GetFusionMaterial
+		function Duel.GetFusionMaterial(tp,loc)
+			if loc==nil then loc=LOCATION_HAND+LOCATION_MZONE end
+			local g=_GetFusionMaterial(tp,loc)
+			local exg=Duel.GetMatchingGroup(aux.fus_mat_hack_exmat_filter,tp,LOCATION_EXTRA,0,nil)
+			return g+exg
+		end
+		_SendtoGrave=Duel.SendtoGrave
+		function Duel.SendtoGrave(tg,reason)
+			if reason~=REASON_EFFECT+REASON_MATERIAL+REASON_FUSION or aux.GetValueType(tg)~="Group" then
+				return _SendtoGrave(tg,reason)
+			end
+			local tc=tg:Filter(Card.IsLocation,nil,LOCATION_EXTRA+LOCATION_GRAVE):Filter(aux.fus_mat_hack_exmat_filter,nil):GetFirst()
+			if tc then
+				local te=tc:IsHasEffect(EFFECT_EXTRA_FUSION_MATERIAL,tc:GetControler())
+				te:UseCountLimit(tc:GetControler())
+			end
+			local rg=tg:Filter(Card.IsLocation,nil,LOCATION_GRAVE)
+			tg:Sub(rg)
+			local ct1=_SendtoGrave(tg,reason)
+			local ct2=Duel.Remove(rg,POS_FACEUP,reason)
+			return ct1+ct2
+		end
+	end
 	--Destroy and search
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -48,13 +77,9 @@ end
 function s.extramtg(e,c)
 	return s.gfilter(c) and c:IsAbleToRemove()
 end
-function s.extraval(chk,summon_type,e,...)
-	if chk==0 then
-		local tp,sg,fc=...
-		return fc==e:GetHandler()
-	elseif chk==2 then
-		return Group.CreateGroup()
-	end
+function s.extraval(e,c)
+	if not c then return true end
+	return c==e:GetHandler()
 end
 function s.dscon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
@@ -76,7 +101,7 @@ function s.dsop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc and tc:IsRelateToEffect(e) and Duel.Destroy(tc,REASON_EFFECT)>0
 		and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil)
-		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+		and Duel.SelectYesNo(tp,e:GetDescription()) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 		local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
 		if #g>0 then

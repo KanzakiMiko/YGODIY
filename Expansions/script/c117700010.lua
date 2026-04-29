@@ -11,6 +11,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 	--return up to 2 banished "Ghost Pokemon" cards to the GY
 	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_TOGRAVE)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
@@ -24,6 +25,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 	--during opponent's Main Phase, change battle position, then destroy 1 Spell/Trap
 	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_POSITION+CATEGORY_DESTROY)
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_FREE_CHAIN)
@@ -35,6 +37,11 @@ function s.initial_effect(c)
 	e4:SetTarget(s.postg)
 	e4:SetOperation(s.posop)
 	c:RegisterEffect(e4)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_CHAINING)
+	e5:SetCountLimit(1,id+100)
+	e5:SetCondition(s.poschaincon)
+	c:RegisterEffect(e5)
 end
 function s.ghfilter(c)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
@@ -68,6 +75,9 @@ end
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp and Duel.IsMainPhase()
 end
+function s.poschaincon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==1-tp and Duel.IsMainPhase() and rp==1-tp
+end
 function s.posfilter(c)
 	return c:IsCanChangePosition()
 end
@@ -83,7 +93,7 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.ChangePosition(tc,POS_FACEUP_ATTACK,POS_FACEUP_DEFENSE,POS_FACEUP_ATTACK,POS_FACEUP_DEFENSE)
 	end
 	if Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil,TYPE_SPELL+TYPE_TRAP)
-		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+		and Duel.SelectYesNo(tp,e:GetDescription()) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 		local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil,TYPE_SPELL+TYPE_TRAP)
 		if #g>0 then Duel.Destroy(g,REASON_EFFECT) end

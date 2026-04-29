@@ -25,9 +25,15 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,id+100)
 	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_END_PHASE)
+	e2:SetCondition(s.drfreecon)
 	e2:SetTarget(s.drtg)
 	e2:SetOperation(s.drop)
 	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_CHAINING)
+	e3:SetCountLimit(1,id+100)
+	e3:SetCondition(s.drchaincon)
+	c:RegisterEffect(e3)
 end
 function s.gfilter(c)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
@@ -55,6 +61,12 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.rlfilter(c)
 	return s.gfilter(c) and c:IsReleasable()
+end
+function s.drfreecon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
+end
+function s.drchaincon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==1-tp and rp==1-tp
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsPlayerCanDraw(tp,1)

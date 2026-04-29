@@ -3,6 +3,7 @@ local SET_GHOST_POKEMON=0x1770
 function s.initial_effect(c)
 	--send 1 "Ghost Pokemon" monster from Deck to GY
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOGRAVE)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
@@ -19,16 +20,23 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 	--banish this card; 1 "Ghost Pokemon" monster gains 800 ATK/DEF
 	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_ATKCHANGE+CATEGORY_DEFCHANGE)
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_FREE_CHAIN)
 	e4:SetRange(LOCATION_GRAVE)
 	e4:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
 	e4:SetCountLimit(1,id+100)
+	e4:SetCondition(s.atkfreecon)
 	e4:SetCost(aux.bfgcost)
 	e4:SetTarget(s.atktg)
 	e4:SetOperation(s.atkop)
 	c:RegisterEffect(e4)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_CHAINING)
+	e5:SetCountLimit(1,id+100)
+	e5:SetCondition(s.atkchaincon)
+	c:RegisterEffect(e5)
 end
 function s.ghfilter(c)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
@@ -49,6 +57,12 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.atkfilter(c)
 	return s.ghfilter(c) and c:IsFaceup()
+end
+function s.atkfreecon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
+end
+function s.atkchaincon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==1-tp and rp==1-tp
 end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.atkfilter(chkc) end

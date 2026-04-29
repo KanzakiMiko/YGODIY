@@ -25,15 +25,22 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 	--GY Special Summon
 	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_FREE_CHAIN)
 	e4:SetRange(LOCATION_GRAVE)
 	e4:SetCountLimit(1,id)
+	e4:SetCondition(s.spfreecon)
 	e4:SetCost(aux.bfgcost)
 	e4:SetTarget(s.sptg)
 	e4:SetOperation(s.spop)
 	c:RegisterEffect(e4)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_CHAINING)
+	e5:SetCountLimit(1,id)
+	e5:SetCondition(s.spchaincon)
+	c:RegisterEffect(e5)
 end
 function s.distg(e,c)
 	return not (c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER))
@@ -53,6 +60,12 @@ end
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+end
+function s.spfreecon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
+end
+function s.spchaincon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==1-tp and rp==1-tp
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end

@@ -3,6 +3,7 @@ local SET_GHOST_POKEMON=0x1770
 function s.initial_effect(c)
 	--add or Special Summon 1 Level 4 or lower "Ghost Pokemon" monster from Deck
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,2))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
@@ -16,16 +17,23 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 	--make 1 monster's ATK/DEF 0
 	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,3))
 	e3:SetCategory(CATEGORY_ATKCHANGE+CATEGORY_DEFCHANGE)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_GRAVE)
 	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
 	e3:SetCountLimit(1,id+100)
+	e3:SetCondition(s.zerofreecon)
 	e3:SetCost(aux.bfgcost)
 	e3:SetTarget(s.zerotg)
 	e3:SetOperation(s.zeroop)
 	c:RegisterEffect(e3)
+	local e4=e3:Clone()
+	e4:SetCode(EVENT_CHAINING)
+	e4:SetCountLimit(1,id+100)
+	e4:SetCondition(s.zerochaincon)
+	c:RegisterEffect(e4)
 end
 function s.ghfilter(c)
 	return c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
@@ -69,6 +77,12 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.zerofilter(c)
 	return c:IsFaceup() and (c:GetAttack()>0 or c:GetDefense()>0)
+end
+function s.zerofreecon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==tp
+end
+function s.zerochaincon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetTurnPlayer()==1-tp and rp==1-tp
 end
 function s.zerotg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.zerofilter(chkc) end

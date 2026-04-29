@@ -3,6 +3,7 @@ local SET_GHOST_POKEMON=0x1770
 function s.initial_effect(c)
 	--Activate
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_ATKCHANGE)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
@@ -11,16 +12,22 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 	--Banish from GY
 	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_REMOVE)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,id)
-	e2:SetCondition(aux.exccon)
+	e2:SetCondition(s.rmfreecon)
 	e2:SetCost(aux.bfgcost)
 	e2:SetTarget(s.rmtg)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_CHAINING)
+	e3:SetCountLimit(1,id)
+	e3:SetCondition(s.rmchaincon)
+	c:RegisterEffect(e3)
 end
 function s.cfilter(c)
 	return c:IsFaceup() and c:IsSetCard(SET_GHOST_POKEMON) and c:IsType(TYPE_MONSTER)
@@ -57,6 +64,12 @@ function s.atlimit(e,c)
 end
 function s.rmfilter(c)
 	return c:IsFaceup() and c:IsSummonType(SUMMON_TYPE_SPECIAL) and c:IsAbleToRemove()
+end
+function s.rmfreecon(e,tp,eg,ep,ev,re,r,rp)
+	return aux.exccon(e,tp,eg,ep,ev,re,r,rp) and Duel.GetTurnPlayer()==tp
+end
+function s.rmchaincon(e,tp,eg,ep,ev,re,r,rp)
+	return aux.exccon(e,tp,eg,ep,ev,re,r,rp) and Duel.GetTurnPlayer()==1-tp and rp==1-tp
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.rmfilter(chkc) end
